@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Chat</title>
+    </head>
+    <body>
+        <h1>WebSocket Chat</h1>
+        <h2>Your ID: <span id="ws-id"></span></h2>
+        <form action="" onsubmit="sendMessage(event)">
+            <input type="text" id="messageText" autocomplete="off" />
+            <button>Send</button>
+        </form>
+        <ul id="messages"></ul>
+        <script>
+            // Получение username из URL
+            const pathSegments = window.location.pathname.split("/");
+            const username = pathSegments.find((segment, index) => pathSegments[index - 1] === "chatroom");
+
+            if (!username) {
+                console.error("Username not found in URL!");
+            }
+
+            // Подключение к WebSocket
+            const socket = new WebSocket(`ws://localhost:8000/chatroom/${username}`); 
+
+            socket.onopen = () => {
+                console.log('Connected to WebSocket');
+                document.getElementById("ws-id").textContent = username || "Unknown";
+            };
+
+            socket.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                const messageElement = document.createElement("li");
+                messageElement.textContent = `${message.sender}: ${message.message}`;
+                document.getElementById("messages").appendChild(messageElement);
+            };
+
+            socket.onclose = () => {
+                console.log('Disconnected from WebSocket');
+                document.getElementById("ws-id").textContent = "Disconnected";
+            };
+
+            socket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+
+            // Функция для отправки сообщений
+            function sendMessage(event) {
+                event.preventDefault();
+                const messageText = document.getElementById("messageText").value;
+
+                if (messageText && socket.readyState === WebSocket.OPEN) {
+                    const message = {
+                        sender: username,
+                        message: messageText
+                    };
+
+                    socket.send(JSON.stringify(message));  
+                    document.getElementById("messageText").value = '';  
+                }
+            }
+        </script>
+    </body>
+</html>
