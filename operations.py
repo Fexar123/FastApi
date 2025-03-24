@@ -1,15 +1,15 @@
 from database.db import SessionDep
 from modules.Book import BookModel
 from modules.User import UserModel
-from schemas.book_schema import BookAddSchema
 from schemas.user_schema import UserSchema
+from schemas.book_schema import BookSchema
 from sqlalchemy import select
-from typing import Annotated
+from typing import Annotated, Optional
 from fastapi import Depends
 
 class BookOpera:
 
-    async def  add_book(data: BookAddSchema, session: SessionDep):
+    async def  add_book(data: BookSchema, session: SessionDep):
         new_book = BookModel(
             title = data.title,
             author = data.author,
@@ -52,8 +52,8 @@ class UserOpera:
         return result.scalar()
 
 
-    async def get_by_username(username: str ,session: SessionDep):
-        result = await session.execute(select(BookModel).filter(UserModel.username == username))
+    async def get_by_username(username: str ,session: SessionDep) -> Optional[UserModel]:
+        result = await session.execute(select(UserModel).filter(UserModel.username == username))
         return result.scalar()
     
     async def get_by_email(email: str, session: SessionDep):
@@ -63,4 +63,8 @@ class UserOpera:
 def get_user_opera():
     return UserOpera
 
+def pwd_context(password: str, user_password: str) -> bool:
+    if password == user_password:
+        return True
+    
 AnUser_Opera = Annotated[UserOpera, Depends(get_user_opera)]

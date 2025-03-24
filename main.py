@@ -9,9 +9,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from myqrcode.code import image
 from database.db import engine
 from modules.Book import Base
+from modules.User import Base
 from schemas.book_schema import UserLoginSchema
 from routes.book_routes import router as book_router
 from routes.user_router import router as user_router
+from security import router as sec_router
 
 image.save("qrcode.png")
 
@@ -27,6 +29,7 @@ app.add_middleware(
 
 app.include_router(book_router)
 app.include_router(user_router)
+app.include_router(sec_router)
 
 
 config = AuthXConfig()
