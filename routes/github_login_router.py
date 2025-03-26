@@ -1,6 +1,6 @@
 import httpx
 from fastapi import APIRouter, HTTPException, status
-from security import Token
+from routes.security import Token
 from third_party_login import (
 GITHUB_AUTHORIZATION_URL,
 GITHUB_CLIENT_ID,

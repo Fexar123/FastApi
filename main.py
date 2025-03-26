@@ -13,7 +13,7 @@ from modules.User import Base
 from schemas.book_schema import UserLoginSchema
 from routes.book_routes import router as book_router
 from routes.user_router import router as user_router
-from security import router as sec_router
+from routes.security import router as sec_router
 
 image.save("qrcode.png")
 

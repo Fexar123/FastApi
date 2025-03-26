@@ -1,11 +1,12 @@
 from database.db import SessionDep
 from modules.Book import BookModel
 from modules.User import UserModel
-from schemas.user_schema import UserSchema
+from schemas.user_schema import abc_UserSchema
 from schemas.book_schema import BookSchema
 from sqlalchemy import select
 from typing import Annotated, Optional
 from fastapi import Depends
+from exceptions.my_exceptions import EmailAlreadyRegistred
 
 class BookOpera:
 
@@ -37,11 +38,16 @@ AnBook_Opera = Annotated[BookOpera, Depends(get_book_opera)]
 
 class UserOpera:
 
-    async def add_user(data: UserSchema, session: SessionDep):
+    async def add_user(data: abc_UserSchema, session: SessionDep):
+        result = await session.execute(select(UserModel).filter(UserModel.email == data.email))
+        if result.scalar():
+            raise EmailAlreadyRegistred
+        
         new_user = UserModel(
             username = data.username,
             email = data.email,
             password = data.password,
+            role = data.role,
         )   
         session.add(new_user)
         await session.commit()

@@ -4,6 +4,7 @@ from email_validator import (
     validate_email,
     EmailNotValidError,
 )
+from fastapi import Depends
 from sqlalchemy import select
 
 from operations import pwd_context, AnUser_Opera 
@@ -34,7 +35,7 @@ def create_access_token(data: dict) -> str:
       encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
       return encoded_jwt
 
-async def decode_access_token(token: str, session: SessionDep, result: AnUser_Opera) -> UserModel | None:
+async def decode_access_token(token: str, session: SessionDep) -> UserModel | None:
         try:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
             username: str = payload.get("sub")
@@ -42,9 +43,7 @@ async def decode_access_token(token: str, session: SessionDep, result: AnUser_Op
               return
         if not username:
               return
-        result2 = await session.execute(select(UserModel).filter(UserModel.username == username))
-        user = result2.scalar()
-        user = await result.get_by_username(username)
+        user = await AnUser_Opera.get_by_username(username,session)
         return user
 
 from fastapi import (
@@ -63,7 +62,7 @@ router = APIRouter()
 
 @router.post("/token", response_model=Token)
 async def get_user_access_token(session: SessionDep, form_data: OAuth2PasswordRequestForm = Depends()):
-    user = await authenticate_user(form_data.username, form_data.password)
+    user = await authenticate_user(form_data.username, form_data.password, session)
     if not user:
           raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, details="Incorrect username or password")
     access_token  = create_access_token(data = {"sub": user.username})
@@ -76,7 +75,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 @router.get("/users/me")
 async def read_user_me(session: SessionDep, token: str = Depends(oauth2_scheme)):
-      user = await decode_access_token(token,session)
+      user = await decode_access_token(token, session)
       if not user:
             raise HTTPException(status_code = 403, detail="User not authorized")
       return {"description": f"{user.username}"}
