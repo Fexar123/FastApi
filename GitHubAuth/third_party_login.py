@@ -13,19 +13,19 @@ import httpx
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2
 from sqlalchemy.orm import Session
-from modules import User
+from modules.User import UserModel
 from database.db import SessionDep
 from operations import AnUser_Opera
 
 
 
-def resolve_github_token(session: SessionDep, AnUser: AnUser_Opera, access_token: str = Depends(OAuth2())) -> User:
-    user_response = httpx.get("https://api.github.com/user", headers={"Authorization": access_token }).json()
+async def resolve_github_token(session: SessionDep, AnUser: AnUser_Opera, access_token: str = Depends(OAuth2())) -> UserModel:
+    user_response = httpx.get("https://api.github.com/user", headers={"Authorization": access_token },).json()
     username = user_response.get("login", " ")
-    user = AnUser.get_by_username(username, session)
+    user = await AnUser.get_by_username(username, session)
     if not user:
         email = user_response.get("email", " ")
-        user = AnUser.get_by_email(email, session)
+        user = await AnUser.get_by_email(email, session)
     if not user:
         raise HTTPException(
             status_code=403,detail="Token not valid"
